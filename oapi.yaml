@@ -1,0 +1,80 @@
+openapi: 3.0.0
+info:
+  version: v1
+  title: Motimate PublicAPI
+  description: Motimate PublicAPI
+  contact:
+    name: Motimate
+paths:
+  /groups:
+    post:
+      description: Creates a new Group.
+      operationId: createGroup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                group:
+                  required:
+                    - kind
+                    - name
+                  type: object
+                  properties:
+                    kind:
+                      enum:
+                        - Store
+                        - Region
+                        - Country
+                        - Organization
+                        - Custom
+                      type: string
+                    name:
+                      type: string
+      responses:
+        '201':
+          description: Group response
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+        '422':
+          description: API error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+components:
+  schemas:
+    ValidationError:
+      description: API validation error
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - id
+            - message
+            - status
+            - validations
+          properties:
+            id:
+              type: string
+            message:
+              type: string
+            status:
+              type: integer
+            validations:
+              type: object
+      example:
+        id: 422
+        message: The given parameters are not valid
+        status: 422
+        validations:
+          name:
+            - "can't be blank"
