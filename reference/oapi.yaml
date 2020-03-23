@@ -1,12 +1,44 @@
 openapi: 3.0.0
 info:
-  version: v1
+  version: 1.0.0
   title: Motimate PublicAPI
   description: Motimate PublicAPI
   contact:
     name: Motimate
+security:
+  - BearerAuth:
+      - read
+      - write
 paths:
   /groups:
+    get:
+      description: Fetches Groups.
+      operationId: fetchGroups
+      responses:
+        '200':
+          description: Groups
+          content:
+            application/json:
+              schema:
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      properties:
+                        id:
+                          type: integer
+                        kind:
+                          enum:
+                            - Store
+                            - Region
+                            - Country
+                            - Organization
+                            - Custom
+                          type: string
+                        level:
+                          type: string
+                        name:
+                          type: string
     post:
       description: Creates a new Group.
       operationId: createGroup
@@ -14,6 +46,8 @@ paths:
         content:
           application/json:
             schema:
+              required:
+                - group
               properties:
                 group:
                   required:
@@ -33,22 +67,164 @@ paths:
                       type: string
       responses:
         '201':
-          description: Group response
+          description: Group
           content:
             application/json:
               schema:
                 properties:
-                  id:
-                    type: integer
-                  name:
-                    type: string
+                  group:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      kind:
+                        enum:
+                          - Store
+                          - Region
+                          - Country
+                          - Organization
+                          - Custom
+                        type: string
+                      level:
+                        type: string
+                      name:
+                        type: string
         '422':
           description: API error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ValidationError'
+  /positions:
+    get:
+      description: Fetches Positions.
+      operationId: fetchPositions
+      responses:
+        '200':
+          description: Positions
+          content:
+            application/json:
+              schema:
+                properties:
+                  positions:
+                    type: array
+                    items:
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+    post:
+      description: Creates a new Position.
+      operationId: createPosition
+      requestBody:
+        content:
+          application/json:
+            schema:
+              required:
+                - position
+              properties:
+                position:
+                  required:
+                    - name
+                  type: object
+                  properties:
+                    name:
+                      type: string
+      responses:
+        '201':
+          description: Position
+          content:
+            application/json:
+              schema:
+                properties:
+                  position:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+        '422':
+          description: API error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+  /oauth/token:
+    post:
+      description: Creates a new Token. Can be access or refresh token.
+      operationId: createToken
+      requestBody:
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/AccessTokenBody'
+                - $ref: '#/components/schemas/RefreshTokenBody'
+      responses:
+        '200':
+          description: Token
+          content:
+            application/json:
+              schema:
+                required:
+                  - access_token
+                  - created_at
+                  - expires_in
+                  - refresh_token
+                  - token_type
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  created_at:
+                    type: integer
+                  expires_in:
+                    type: integer
+                  refresh_token:
+                    type: string
+                  token_type:
+                    enum:
+                      - Bearer
+                    type: string
+        '401':
+          description: API error
+          content:
+            application/json:
+              schema:
+                required:
+                  - error
+                properties:
+                  error:
+                    required:
+                      - id
+                      - message
+                      - status
+                    properties:
+                      id:
+                        enum:
+                          - invalid_credentials
+                        type: string
+                      message:
+                        enum:
+                          - The given credentials are not valid.
+                        type: string
+                      status:
+                        enum:
+                          - 401
+                        type: integer
+      security: []
 components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  examples: {}
+  links: {}
+  parameters: {}
+  requestBodies: {}
+  responses: {}
   schemas:
     ValidationError:
       description: API validation error
@@ -77,4 +253,35 @@ components:
         status: 422
         validations:
           name:
-            - "can't be blank"
+            - can't be blank
+    AccessTokenBody:
+      required:
+        - client_id
+        - grant_type
+        - password
+        - username
+      properties:
+        client_id:
+          type: string
+        grant_type:
+          enum:
+            - password
+          type: string
+        password:
+          type: string
+        username:
+          type: string
+    RefreshTokenBody:
+      required:
+        - client_id
+        - grant_type
+        - refresh_token
+      properties:
+        client_id:
+          type: string
+        grant_type:
+          enum:
+            - refresh_token
+          type: string
+        refresh_token:
+          type: string
